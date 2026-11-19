@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lofi Studio">
+<meta name="theme-color" content="#120f1c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<title>Lofi Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Noto+Sans+Devanagari:wght@600&family=Pacifico&family=Playfair+Display:wght@600&family=Poppins:wght@400;600&family=Space+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#120f1c; --panel:#1b1729; --card:#241f36; --line:#332c4b;
+  --text:#f1ecff; --muted:#a59cc3; --accent:#f6c177; --accent2:#c4a7e7;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
+  font-family:"Poppins",system-ui,-apple-system,sans-serif;font-size:15px}
+body{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+header{display:flex;align-items:center;justify-content:space-between;
+  padding:calc(10px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 6px calc(14px + env(safe-area-inset-left))}
+.logo{font-weight:600;font-size:18px;letter-spacing:.3px}
+.logo span{color:var(--accent)}
+.btn{border:0;border-radius:12px;padding:10px 16px;background:var(--card);font-weight:600}
+.btn.primary{background:linear-gradient(135deg,var(--accent),#eb9f6a);color:#1b1206}
+.btn.block{width:100%;padding:13px 16px;margin:6px 0}
+.btn.ghost{background:transparent;border:1px solid var(--line)}
+.btn:disabled{opacity:.45}
+#stage{position:relative;display:flex;align-items:center;justify-content:center;
+  height:min(40dvh,62vw);padding:0 12px}
+#cv{max-width:100%;max-height:100%;width:auto;height:auto;border-radius:10px;
+  background:#000;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+#empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  text-align:center;padding:30px;color:var(--muted);pointer-events:none;font-size:14px}
+.transport{display:flex;align-items:center;gap:10px;padding:10px 14px}
+#play{width:46px;height:46px;border-radius:50%;border:0;background:var(--accent);color:#1b1206;
+  font-size:18px;flex:none;display:flex;align-items:center;justify-content:center}
+.time{font-variant-numeric:tabular-nums;font-size:12px;color:var(--muted);min-width:38px;text-align:center}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+  background:var(--text);margin-top:-9px;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+input[type=range]::-moz-range-track{height:4px;border-radius:4px;background:var(--line)}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--text);border:0}
+#panel{flex:1;overflow-y:auto;background:var(--panel);border-radius:18px 18px 0 0;
+  padding:14px 16px 20px;-webkit-overflow-scrolling:touch}
+#panel h3{margin:0 0 10px;font-size:16px;display:flex;align-items:center;gap:8px}
+.row{margin:10px 0}
+.row .lbl{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+.row .lbl b{color:var(--text);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0}
+.chip{border:1px solid var(--line);background:transparent;border-radius:20px;padding:7px 13px;font-size:13px}
+.chip.on{background:var(--accent2);color:#160f26;border-color:var(--accent2);font-weight:600}
+.card{background:var(--card);border-radius:14px;padding:12px;margin:10px 0}
+.note{font-size:12px;color:var(--muted);line-height:1.5}
+.info{font-size:13px;line-height:1.6}
+.info b{color:var(--accent)}
+.toggle{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)}
+.sw{width:46px;height:28px;border-radius:14px;background:var(--line);position:relative;border:0;flex:none}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s}
+.sw.on{background:var(--accent)}
+.sw.on::after{left:21px}
+.thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0}
+.thumb{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:#000}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb button{position:absolute;top:3px;right:3px;width:24px;height:24px;border-radius:50%;border:0;
+  background:rgba(0,0,0,.7);font-size:13px;line-height:24px;padding:0}
+.thumb span{position:absolute;left:4px;bottom:3px;font-size:11px;background:rgba(0,0,0,.6);padding:0 5px;border-radius:6px}
+textarea,input[type=number]{width:100%;background:#15121f;color:var(--text);border:1px solid var(--line);
+  border-radius:10px;padding:10px;font:inherit;font-size:16px}
+input[type=color]{width:38px;height:32px;border:0;padding:0;background:none;border-radius:8px}
+.swatches{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.swatch{width:28px;height:28px;border-radius:50%;border:2px solid var(--line)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.two label{font-size:12px;color:var(--muted)}
+.cardhead{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
+.del{border:0;background:#3a2234;color:#ffb4c4;border-radius:10px;padding:6px 10px;font-size:12px}
+nav#tools{display:flex;gap:4px;overflow-x:auto;background:#0e0b16;border-top:1px solid var(--line);
+  padding:8px 6px calc(8px + env(safe-area-inset-bottom))}
+nav#tools button{flex:1 0 64px;border:0;background:transparent;display:flex;flex-direction:column;
+  align-items:center;gap:3px;font-size:11px;color:var(--muted);padding:6px 2px;border-radius:12px}
+nav#tools button i{font-style:normal;font-size:21px;line-height:1}
+nav#tools button.on{color:var(--text);background:var(--card)}
+#modal{position:fixed;inset:0;background:rgba(8,6,14,.86);display:none;align-items:flex-end;justify-content:center;z-index:20}
+#modal.show{display:flex}
+.sheet{width:100%;max-width:560px;background:var(--panel);border-radius:20px 20px 0 0;padding:18px 18px calc(22px + env(safe-area-inset-bottom));max-height:92dvh;overflow:auto}
+.sheet h2{margin:0 0 6px;font-size:18px}
+.bar{height:10px;border-radius:6px;background:var(--line);overflow:hidden;margin:14px 0 6px}
+.bar div{height:100%;width:0;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width .3s}
+.sheet video,.sheet audio{width:100%;border-radius:12px;margin:10px 0;background:#000;max-height:46dvh}
+#toast{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:#2c2542;padding:10px 16px;
+  border-radius:12px;font-size:13px;z-index:30;opacity:0;transition:.3s;pointer-events:none;max-width:90vw;text-align:center}
+#toast.show{opacity:1}
+.check{display:flex;gap:10px;align-items:center;font-size:13px;color:var(--muted);margin:10px 0}
+.check input{width:20px;height:20px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Lofi <span>Studio</span></div>
+  <button class="btn primary" id="exportBtn">Export</button>
+</header>
+
+<div id="stage">
+  <canvas id="cv" width="1280" height="720"></canvas>
+  <div id="empty">Tap <b>&nbsp;Song&nbsp;</b> and <b>&nbsp;Images&nbsp;</b> below to start your lofi video</div>
+</div>
+
+<div class="transport">
+  <button id="play" aria-label="Play">&#9654;</button>
+  <span class="time" id="tCur">0:00</span>
+  <input type="range" id="seek" min="0" max="1000" value="0" aria-label="Position">
+  <span class="time" id="tDur">0:00</span>
+</div>
+
+<section id="panel"></section>
+
+<nav id="tools">
+  <button data-p="song"><i>🎵</i>Song</button>
+  <button data-p="bg"><i>🌧️</i>Background</button>
+  <button data-p="images"><i>🖼️</i>Images</button>
+  <button data-p="text"><i>🅃</i>Text</button>
+  <button data-p="vibe"><i>🎚️</i>Lofi vibe</button>
+  <button data-p="volume"><i>🔊</i>Volume</button>
+  <button data-p="visuals"><i>✨</i>Effects</button>
+  <button data-p="format"><i>📐</i>Format</button>
+</nav>
+
+<div id="modal"><div class="sheet" id="sheet"></div></div>
+<div id="toast"></div>
+
+<input type="file" id="fSong" accept="audio/*,.mp3,.mpeg,.mpga,.m4a,.aac,.wav,.flac,.ogg" hidden>
+<input type="file" id="fBg" accept="audio/*,.mp3,.mpeg,.mpga,.m4a,.aac,.wav,.flac,.ogg" hidden>
+<input type="file" id="fImg" accept="image/*" multiple hidden>
+
+<script>
+"use strict";
+/* ============================================================ state */
+const $ = s => document.querySelector(s);
+const PRESETS = {
+  off:    {speed:1.00, warmth:20000, reverb:0.00, bass:0, crackleVol:0.00, wobble:0.00},
+  light:  {speed:0.95, warmth:9000,  reverb:0.18, bass:2, crackleVol:0.25, wobble:0.15},
+  medium: {speed:0.90, warmth:6500,  reverb:0.30, bass:3, crackleVol:0.40, wobble:0.30},
+  heavy:  {speed:0.85, warmth:4500,  reverb:0.45, bass:5, crackleVol:0.55, wobble:0.50},
+  slowrev:{speed:0.85, warmth:12000, reverb:0.60, bass:2, crackleVol:0.10, wobble:0.10},
+};
+const DEFAULTS = Object.assign({
+  preset:'medium', songVol:1, bgVol:0.25, master:1, fadeIn:2, fadeOut:4,
+  bgType:'none', secPerImg:12, xfade:2, zoom:0.5,
+  rain:false, grain:true, vignette:true, dark:0.15, viz:false, progress:true,
+  aspect:'16:9', quality:'720', listen:false, texts:[]
+}, PRESETS.medium);
+const KEY = 'lofiStudio.v1';
+let S = Object.assign({}, DEFAULTS);
+try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s) S = Object.assign(S, s); } catch (e) {}
+let saveTimer = 0;
+function save(){ clearTimeout(saveTimer); saveTimer = setTimeout(() => {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }, 300); }
+
+let songBuf = null, songName = '', bgBuf = null, bgName = '';
+let images = [];          // {src: canvas, url}
+let dirty = true;
+const markDirty = () => { dirty = true; };
+
+/* ============================================================ utils */
+const fmt = s => { s = Math.max(0, s || 0); const m = Math.floor(s / 60), x = Math.floor(s % 60);
+  return m + ':' + String(x).padStart(2, '0'); };
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+function toast(msg, ms){ const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), ms || 2600); }
+function cleanName(n){
+  return n.replace(/(\.(mp3|mpeg|mpga|m4a|aac|wav|flac|ogg|mp4))+$/i, '')
+          .replace(/\b\d{2,3}\s?kbps\b/ig, '').replace(/[_]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
+}
+const safeFile = s => (s || 'lofi').replace(/[<>:"/\\|?*]+/g, '').trim() || 'lofi';
+function dur(){ return songBuf ? songBuf.duration / S.speed : 30; }
+
+/* ============================================================ audio core */
+let AC = null;
+function ensureAC(){
+  if (!AC) {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+  }
+  if (AC.state !== 'running') AC.resume().catch(() => {});
+  return AC;
+}
+function decode(ab){
+  const ac = ensureAC();
+  return new Promise((res, rej) => ac.decodeAudioData(ab, res, rej));
+}
+const genCache = {};
+function genBuffer(kind, sr){
+  const k = kind + sr; if (genCache[k]) return genCache[k];
+  const secs = kind === 'ocean' ? 12.5 : 8, n = Math.floor(secs * sr);
+  const tmp = new OfflineAudioContext(2, 1, sr);
+  const buf = tmp.createBuffer(2, n, sr);
+  const L = buf.getChannelData(0), R = buf.getChannelData(1);
+  const rnd = () => Math.random() * 2 - 1;
+  if (kind === 'crackle') {
+    let h = 0;
+    for (let i = 0; i < n; i++) { h += (rnd() - h) * 0.35; L[i] = h * 0.012; }
+    const pops = Math.floor(secs * 11);
+    for (let p = 0; p < pops; p++) {
+      const at = Math.floor(Math.random() * (n - 400)), len = 20 + Math.floor(Math.random() * 140);
+      const amp = (Math.random() < 0.08 ? 0.45 : 0.06 + Math.random() * 0.2) * (Math.random() < 0.5 ? -1 : 1);
+      for (let j = 0; j < len; j++) L[at + j] += amp * Math.exp(-j / (len / 4)) * (j % 2 ? 1 : 0.6);
+    }
+    for (let i = 0; i < n; i++) R[i] = L[(i + 37) % n];
+  } else if (kind === 'rain') {
+    for (const C of [L, R]) {
+      let a = 0, b = 0;
+      for (let i = 0; i < n; i++) { const w = rnd(); a += (w - a) * 0.45; b += (w - b) * 0.02; C[i] = (a - b) * 0.22; }
+      const drops = Math.floor(secs * 28);
+      for (let d = 0; d < drops; d++) {
+        const at = Math.floor(Math.random() * (n - 600)), f = 1800 + Math.random() * 3500,
+              amp = 0.03 + Math.random() * 0.12, len = Math.floor(sr * 0.012);
+        for (let j = 0; j < len; j++) C[at + j] += amp * Math.sin(2 * Math.PI * f * j / sr) * Math.exp(-j / (len / 5));
+      }
+    }
+  } else if (kind === 'ocean' || kind === 'night') {
+    for (const C of [L, R]) {
+      let b = 0, a = 0;
+      for (let i = 0; i < n; i++) {
+        const w = rnd(); b = (b + 0.02 * w) / 1.02; a += (w - a) * 0.08;
+        if (kind === 'night') C[i] = b * 2.6 + a * 0.015;
+        else { const env = 0.35 + 0.65 * Math.pow(0.5 - 0.5 * Math.cos(2 * Math.PI * i / n), 1.6);
+               C[i] = (b * 2.4 + a * 0.18) * env; }
+      }
+    }
+  }
+  // soften loop seam
+  const fadeN = Math.floor(sr * 0.05);
+  for (const C of [L, R]) for (let i = 0; i < fadeN; i++) { const g = i / fadeN;
+    C[i] = C[i] * g + C[n - fadeN + i] * (1 - g); }
+  return (genCache[k] = buf);
+}
+function makeIR(ac){
+  const k = 'ir' + ac.sampleRate; if (genCache[k]) return genCache[k];
+  const sr = ac.sampleRate, n = Math.floor(sr * 2.8), buf = ac.createBuffer(2, n, sr);
+  for (let c = 0; c < 2; c++) { const d = buf.getChannelData(c);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3.2) * (i < sr * 0.01 ? i / (sr * 0.01) : 1); }
+  return (genCache[k] = buf);
+}
+
+/* Builds the full lofi chain. pos = video time to start from, when = context time */
+function buildGraph(ac, dest, pos, when){
+  const len = dur(), sp = S.speed, base = when - pos, endAt = base + len + 0.05;
+  const N = {}, sources = [];
+  const mix = ac.createGain();
+  const fade = ac.createGain();
+  N.vol = ac.createGain(); N.vol.gain.value = S.master;
+  const comp = ac.createDynamicsCompressor();
+  comp.threshold.value = -10; comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.25;
+  mix.connect(fade); fade.connect(N.vol); N.vol.connect(comp); comp.connect(dest);
+
+  // fades
+  const fi = Math.min(S.fadeIn, len / 2), fo = Math.min(S.fadeOut, Math.max(0, len - fi));
+  let v = 1; if (fi > 0 && pos < fi) v = Math.min(v, pos / fi);
+  if (fo > 0 && pos > len - fo) v = Math.min(v, (len - pos) / fo);
+  const fg = fade.gain; fg.setValueAtTime(v, when);
+  if (fi > 0 && pos < fi) fg.linearRampToValueAtTime(1, base + fi);
+  if (fo > 0) { if (len - fo > pos) fg.setValueAtTime(1, base + len - fo); fg.linearRampToValueAtTime(0, base + len); }
+
+  if (songBuf) {
+    const src = ac.createBufferSource(); src.buffer = songBuf; src.playbackRate.value = sp;
+    if (S.wobble > 0) {
+      for (const [f, d] of [[0.55, 0.012], [6.5, 0.0022]]) {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.frequency.value = f; g.gain.value = S.wobble * d * sp;
+        o.connect(g); g.connect(src.playbackRate); o.start(when); o.stop(endAt); sources.push(o);
+      }
+    }
+    N.song = ac.createGain(); N.song.gain.value = S.songVol;
+    const hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 30;
+    N.bass = ac.createBiquadFilter(); N.bass.type = 'lowshelf'; N.bass.frequency.value = 120; N.bass.gain.value = S.bass;
+    N.lp = ac.createBiquadFilter(); N.lp.type = 'lowpass'; N.lp.frequency.value = S.warmth; N.lp.Q.value = 0.7;
+    N.dry = ac.createGain(); N.dry.gain.value = 1 - S.reverb * 0.4;
+    N.wet = ac.createGain(); N.wet.gain.value = S.reverb * 1.3;
+    const conv = ac.createConvolver(); conv.buffer = makeIR(ac);
+    src.connect(N.song); N.song.connect(hp); hp.connect(N.bass); N.bass.connect(N.lp);
+    N.lp.connect(N.dry); N.dry.connect(mix); N.lp.connect(conv); conv.connect(N.wet); N.wet.connect(mix);
+    const off = pos * sp;
+    if (off < songBuf.duration) { src.start(when, off); sources.push(src); }
+  }
+  // vinyl crackle
+  N.crackle = ac.createGain(); N.crackle.gain.value = S.crackleVol * 0.7; N.crackle.connect(mix);
+  const cb = genBuffer('crackle', ac.sampleRate);
+  const cs = ac.createBufferSource(); cs.buffer = cb; cs.loop = true; cs.connect(N.crackle);
+  cs.start(when, pos % cb.duration); cs.stop(endAt); sources.push(cs);
+  // background
+  let bb = null;
+  if (S.bgType === 'file' && bgBuf) bb = bgBuf;
+  else if (['rain', 'ocean', 'night'].includes(S.bgType)) bb = genBuffer(S.bgType, ac.sampleRate);
+  N.bg = ac.createGain(); N.bg.gain.value = S.bgVol; N.bg.connect(mix);
+  if (bb) { const bs = ac.createBufferSource(); bs.buffer = bb; bs.loop = true; bs.connect(N.bg);
+    bs.start(when, pos % bb.duration); bs.stop(endAt); sources.push(bs); }
+
+  return { N, stop(){ for (const s of sources) { try { s.stop(); } catch (e) {} } try { comp.disconnect(); } catch (e) {} } };
+}
+
+/* ============================================================ live preview */
+let playing = false, live = null, liveAn = null, t0 = 0, pos0 = 0, pausedT = 0;
+let exporting = false, expAn = null, expT = () => 0;
+function curT(){
+  if (exporting) return expT();
+  if (playing && AC) return Math.min(dur(), pos0 + AC.currentTime - t0);
+  return pausedT;
+}
+function play(){
+  const ac = ensureAC();
+  if (pausedT >= dur() - 0.05) pausedT = 0;
+  const when = ac.currentTime + 0.06;
+  liveAn = ac.createAnalyser(); liveAn.fftSize = 256; liveAn.smoothingTimeConstant = 0.75;
+  liveAn.connect(ac.destination);
+  live = buildGraph(ac, liveAn, pausedT, when);
+  t0 = when; pos0 = pausedT; playing = true; updatePlay();
+}
+function pause(){
+  if (!playing) return;
+  pausedT = curT(); if (live) live.stop(); live = null; playing = false; updatePlay(); markDirty();
+}
+function restartIfPlaying(){ if (playing) { const t = curT(); pause(); pausedT = t; play(); } markDirty(); }
+function applyLive(){
+  if (!live || !AC) return; const N = live.N, now = AC.currentTime, k = 0.04;
+  if (N.song) { N.song.gain.setTargetAtTime(S.songVol, now, k); N.lp.frequency.setTargetAtTime(S.warmth, now, k);
+    N.bass.gain.setTargetAtTime(S.bass, now, k); N.dry.gain.setTargetAtTime(1 - S.reverb * 0.4, now, k);
+    N.wet.gain.setTargetAtTime(S.reverb * 1.3, now, k); }
+  N.crackle.gain.setTargetAtTime(S.crackleVol * 0.7, now, k);
+  N.bg.gain.setTargetAtTime(S.bgVol, now, k); N.vol.gain.setTargetAtTime(S.master, now, k);
+}
+function updatePlay(){ $('#play').innerHTML = playing ? '&#10073;&#10073;' : '&#9654;'; }
+$('#play').onclick = () => { if (exporting) return; playing ? pause() : play(); };
+$('#seek').oninput = e => {
+  const t = e.target.value / 1000 * dur(); const was = playing; if (was) pause(); pausedT = t;
+  if (was) play(); markDirty();
+};
+
+/* ============================================================ canvas */
+const cv = $('#cv'), g = cv.getContext('2d');
+let W = 1280, H = 720, vignette = null, grainPats = [];
+const SIZES = { '16:9': [16, 9], '9:16': [9, 16], '1:1': [1, 1] };
+function resize(){
+  const [a, b] = SIZES[S.aspect] || SIZES['16:9'];
+  const short = S.quality === '1080' ? 1080 : 720;
+  if (a >= b) { H = short; W = Math.round(short * a / b); } else { W = short; H = Math.round(short * b / a); }
+  W -= W % 2; H -= H % 2;
+  cv.width = W; cv.height = H;
+  const R = Math.hypot(W, H) / 2;
+  vignette = g.createRadialGradient(W / 2, H / 2, R * 0.45, W / 2, H / 2, R);
+  vignette.addColorStop(0, 'rgba(0,0,0,0)'); vignette.addColorStop(1, 'rgba(0,0,0,0.6)');
+  markDirty();
+}
+(function makeGrain(){
+  for (let k = 0; k < 4; k++) {
+    const c = document.createElement('canvas'); c.width = c.height = 160;
+    const x = c.getContext('2d'), d = x.createImageData(160, 160);
+    for (let i = 0; i < d.data.length; i += 4) { const v = Math.random() * 255;
+      d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; }
+    x.putImageData(d, 0, 0); grainPats.push(g.createPattern(c, 'repeat'));
+  }
+})();
+const drops = Array.from({ length: 170 }, () => ({ x: Math.random(), y: Math.random(), l: 0.035 + Math.random() * 0.06,
+  s: 0.7 + Math.random() * 0.9, w: Math.random() }));
+const FONTS = {
+  clean:  { fam: '"Poppins", system-ui, sans-serif', w: 600, label: 'Clean' },
+  serif:  { fam: '"Playfair Display", Georgia, serif', w: 600, label: 'Serif' },
+  hand:   { fam: '"Caveat", cursive', w: 700, label: 'Handwritten' },
+  script: { fam: '"Pacifico", cursive', w: 400, label: 'Script' },
+  mono:   { fam: '"Space Mono", monospace', w: 400, label: 'Typewriter' },
+  hindi:  { fam: '"Noto Sans Devanagari", "Poppins", sans-serif', w: 600, label: 'हिंदी' },
+};
+if (document.fonts) {
+  Promise.all(Object.values(FONTS).map(f => document.fonts.load(f.w + ' 40px ' + f.fam, 'Aa नमस्ते').catch(() => {})))
+    .then(markDirty);
+}
+function drawCover(src, alpha, scale, px, py){
+  const s = Math.max(W / src.width, H / src.height) * scale, dw = src.width * s, dh = src.height * s;
+  g.globalAlpha = alpha;
+  g.drawImage(src, (W - dw) / 2 + px * (dw - W) / 2, (H - dh) / 2 + py * (dh - H) / 2, dw, dh);
+}
+const vizPrev = new Float32Array(40), freq = new Uint8Array(128);
+function draw(t, an){
+  g.save(); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; g.shadowColor = 'transparent';
+  if (images.length) {
+    g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+    const n = images.length, z = S.zoom;
+    if (n === 1) {
+      drawCover(images[0].src, 1, 1 + z * 0.1 * (0.5 - 0.5 * Math.cos(2 * Math.PI * t / 24)), 0, 0);
+    } else {
+      const seg = Math.max(3, S.secPerImg), xf = Math.min(S.xfade, seg * 0.6);
+      const k = Math.floor(t / seg), local = t - k * seg;
+      const ken = (idx, p) => drawCover(images[idx % n].src, 1, 1 + z * 0.14 * p, (idx % 2 ? 1 : -1) * (p - 0.5) * 0.8 * Math.min(1, z * 2), 0);
+      ken(k, (local + xf) / (seg + xf));
+      if (local > seg - xf) {
+        const a = (local - (seg - xf)) / xf;
+        g.save(); const idx = k + 1;
+        const p = (local - (seg - xf)) / (seg + xf);
+        const s = images[idx % n].src;
+        const sc = Math.max(W / s.width, H / s.height) * (1 + z * 0.14 * p), dw = s.width * sc, dh = s.height * sc;
+        const px = (idx % 2 ? 1 : -1) * (p - 0.5) * 0.8 * Math.min(1, z * 2);
+        g.globalAlpha = a; g.drawImage(s, (W - dw) / 2 + px * (dw - W) / 2, (H - dh) / 2, dw, dh); g.restore();
+      }
+    }
+  } else {
+    const gr = g.createLinearGradient(0, 0, W, H);
+    gr.addColorStop(0, '#2a1f4a'); gr.addColorStop(0.55, '#5b3a6b'); gr.addColorStop(1, '#c9785f');
+    g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  }
+  g.globalAlpha = 1;
+  if (S.dark > 0) { g.fillStyle = 'rgba(0,0,0,' + S.dark + ')'; g.fillRect(0, 0, W, H); }
+  if (S.rain) {
+    const sc = W / 1280; g.strokeStyle = 'rgba(205,215,255,0.28)'; g.lineCap = 'round';
+    for (const d of drops) {
+      const y = (((d.y + t * d.s * 0.9) % 1.15) - 0.1) * H, len = d.l * H;
+      const x = ((d.x * W + y * 0.12) % W + W) % W;
+      g.lineWidth = (0.8 + d.w * 1.4) * sc;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + len * 0.12, y + len); g.stroke();
+    }
+  }
+  if (S.vignette && vignette) { g.fillStyle = vignette; g.fillRect(0, 0, W, H); }
+  if (S.viz && an) {
+    an.getByteFrequencyData(freq);
+    const bars = 40, bw = W * 0.5 / bars, x0 = W / 2 - (bars * bw) / 2, yb = H * (S.progress ? 0.955 : 0.97);
+    g.fillStyle = 'rgba(255,255,255,0.75)';
+    for (let i = 0; i < bars; i++) {
+      const v = freq[2 + Math.floor(i * 1.6)] / 255; vizPrev[i] += (v - vizPrev[i]) * 0.35;
+      const h = Math.max(2, vizPrev[i] * H * 0.11);
+      g.fillRect(x0 + i * bw + bw * 0.18, yb - h, bw * 0.64, h);
+    }
+  }
+  // text layers
+  const D = dur(), base = Math.min(W, H);
+  for (const L of S.texts) {
+    if (!L.text || !L.text.trim()) continue;
+    const st = +L.start || 0, en = +L.end > 0 ? +L.end : D;
+    if (t < st || t > en) continue;
+    const a = clamp(Math.min(st > 0 ? (t - st) / 0.8 : 1, en < D ? (en - t) / 0.8 : 1), 0, 1);
+    const f = FONTS[L.font] || FONTS.clean, px = Math.max(10, L.size / 100 * base);
+    g.font = f.w + ' ' + px + 'px ' + f.fam; g.textBaseline = 'top';
+    g.textAlign = L.align === 'left' ? 'left' : L.align === 'right' ? 'right' : 'center';
+    const x = L.align === 'left' ? W * 0.06 : L.align === 'right' ? W * 0.94 : W / 2;
+    const lines = L.text.split('\n'), lh = px * 1.22, total = lines.length * lh;
+    let y = L.pos === 'top' ? H * 0.08 : L.pos === 'center' ? H / 2 - total / 2 : H * 0.9 - total;
+    y += (+L.offset || 0) / 100 * H;
+    g.globalAlpha = a; g.fillStyle = L.color || '#fff';
+    if (L.shadow !== false) { g.shadowColor = 'rgba(0,0,0,0.65)'; g.shadowBlur = px * 0.3; g.shadowOffsetY = px * 0.05; }
+    else g.shadowColor = 'transparent';
+    lines.forEach((ln, i) => g.fillText(ln, x, y + i * lh));
+    g.shadowColor = 'transparent';
+  }
+  g.globalAlpha = 1;
+  if (S.progress && songBuf) {
+    const h = Math.max(3, H * 0.006);
+    g.fillStyle = 'rgba(255,255,255,0.18)'; g.fillRect(0, H - h, W, h);
+    g.fillStyle = 'rgba(246,193,119,0.9)'; g.fillRect(0, H - h, W * clamp(t / D, 0, 1), h);
+  }
+  if (S.grain) {
+    const p = grainPats[Math.floor(t * 24) % 4]; g.globalAlpha = 0.055; g.fillStyle = p;
+    const o = (Math.floor(t * 24) * 53) % 160; g.translate(-o, -o); g.fillRect(0, 0, W + 160, H + 160);
+  }
+  g.restore();
+}
+function frame(){
+  requestAnimationFrame(frame);
+  if (playing && !exporting && curT() >= dur() - 0.02) { pause(); pausedT = 0; markDirty(); }
+  if (playing || exporting || dirty) {
+    const t = curT(); draw(t, exporting ? expAn : liveAn); dirty = false;
+    $('#tCur').textContent = fmt(t); $('#tDur').textContent = fmt(dur());
+    if (document.activeElement !== $('#seek')) $('#seek').value = Math.round(t / dur() * 1000);
+    if (exporting && expProgress) expProgress(t);
+  }
+}
+
+/* ============================================================ files */
+/* iPhone note: files from the picker are temporary copies. Never clear the
+   <input> before the file is fully read, or Safari can throw NotReadableError. */
+function readFile(f){
+  return new Promise((res, rej) => {
+    const go = () => { const r = new FileReader();
+      r.onload = () => res(r.result); r.onerror = () => rej(r.error || new Error('read failed')); r.readAsArrayBuffer(f); };
+    if (f.arrayBuffer) f.arrayBuffer().then(res, go); else go();
+  });
+}
+function errText(e){ return e ? ((e.name && e.name !== 'Error' ? e.name + ': ' : '') + (e.message || String(e))) : 'unknown error'; }
+let mpgLib = null;
+function loadMpg(){
+  if (window['mpg123-decoder']) return Promise.resolve(window['mpg123-decoder']);
+  if (!mpgLib) mpgLib = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'mpg123-decoder.min.js';
+    s.onload = () => window['mpg123-decoder'] ? res(window['mpg123-decoder']) : rej(new Error('decoder missing'));
+    s.onerror = () => { mpgLib = null; rej(new Error('could not load backup MP3 decoder file')); };
+    document.head.append(s);
+  });
+  return mpgLib;
+}
+async function decodeMp3Wasm(ab){
+  const lib = await loadMpg(); const dec = new lib.MPEGDecoder(); await dec.ready;
+  try {
+    const r = dec.decode(new Uint8Array(ab));
+    if (!r || !r.samplesDecoded) throw new Error('no audio frames found');
+    const ac = ensureAC(), ch = r.channelData.length;
+    const buf = ac.createBuffer(ch === 1 ? 2 : ch, r.samplesDecoded, r.sampleRate);
+    for (let c = 0; c < buf.numberOfChannels; c++) buf.getChannelData(c).set(r.channelData[Math.min(c, ch - 1)].subarray(0, r.samplesDecoded));
+    return buf;
+  } finally { try { dec.free(); } catch (e) {} }
+}
+async function loadAudioFile(f){
+  const ab = await readFile(f);                       // step 1: read bytes
+  if (!ab || !ab.byteLength) throw new Error('the file is empty (is it still downloading from iCloud?)');
+  try { return await decode(ab.slice(0)); }           // step 2: built-in decoder
+  catch (e1) {
+    try { return await decodeMp3Wasm(ab); }           // step 3: backup MP3 decoder
+    catch (e2) { throw new Error('built-in: ' + errText(e1) + ' | backup: ' + errText(e2)); }
+  }
+}
+async function pickAudio(input, onOk, what){
+  const f = input.files && input.files[0]; if (!f) return;
+  toast('Loading ' + what + '…', 15000);
+  try { const buf = await loadAudioFile(f); onOk(buf, f); }
+  catch (err) { console.error(err);
+    toast('Could not open "' + f.name + '" (' + Math.round(f.size / 1024) + ' KB). ' + errText(err), 9000); }
+  finally { input.value = ''; }
+}
+$('#fSong').onchange = e => pickAudio(e.target, (buf, f) => {
+  pause(); songBuf = buf; songName = cleanName(f.name); pausedT = 0;
+  if (!S.texts.length) {
+    S.texts.push(newText({ text: songName, size: 6.5, pos: 'bottom', align: 'left', offset: -5 }));
+    S.texts.push(newText({ text: 'lofi • slowed + reverb', size: 3.4, pos: 'bottom', align: 'left', color: '#f6c177', offset: 0, font: 'clean' }));
+  }
+  save(); toast('Song added: ' + songName); updateEmpty(); renderPanel(); markDirty();
+}, 'song');
+$('#fBg').onchange = e => pickAudio(e.target, (buf, f) => {
+  bgBuf = buf; bgName = cleanName(f.name); S.bgType = 'file'; save();
+  toast('Background added'); renderPanel(); restartIfPlaying();
+}, 'background');
+
+function imgFromBlob(blob){
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(blob), img = new Image();
+    img.onload = () => res(img); img.onerror = () => rej(new Error('image could not be decoded'));
+    img.src = url;
+  });
+}
+function imgFromDataURL(f){
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => { const img = new Image(); img.onload = () => res(img);
+      img.onerror = () => rej(new Error('image could not be decoded')); img.src = r.result; };
+    r.onerror = () => rej(r.error || new Error('read failed')); r.readAsDataURL(f);
+  });
+}
+async function loadImageFile(f){
+  let src = null, errs = [];
+  if (window.createImageBitmap) { try { src = await createImageBitmap(f); } catch (e) { errs.push(errText(e)); } }
+  if (!src) { try { src = await imgFromBlob(f); } catch (e) { errs.push(errText(e)); } }
+  if (!src) { try { src = await imgFromDataURL(f); } catch (e) { errs.push(errText(e)); } }
+  if (!src) throw new Error(errs.join(' | '));
+  const w = src.naturalWidth || src.width, h = src.naturalHeight || src.height;
+  if (!w || !h) throw new Error('image has no size');
+  const s = Math.min(1, 2400 / Math.max(w, h));
+  const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w * s)); c.height = Math.max(1, Math.round(h * s));
+  c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+  if (src.close) try { src.close(); } catch (e) {}
+  const t = document.createElement('canvas'), ts = 200 / Math.max(c.width, c.height);
+  t.width = Math.round(c.width * ts); t.height = Math.round(c.height * ts);
+  t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
+  return { src: c, url: t.toDataURL('image/jpeg', 0.8) };
+}
+$('#fImg').onchange = async e => {
+  const input = e.target, files = [...(input.files || [])]; if (!files.length) return;
+  toast('Loading ' + files.length + ' image' + (files.length > 1 ? 's' : '') + '…', 15000);
+  let bad = [];
+  try {
+    for (const f of files) {
+      try { images.push(await loadImageFile(f)); }
+      catch (err) { console.error(err); bad.push(f.name + ': ' + errText(err)); }
+    }
+  } finally { input.value = ''; }
+  if (bad.length) toast('Could not open ' + bad.length + ' image(s). ' + bad[0], 9000);
+  else toast(images.length + ' image' + (images.length > 1 ? 's' : '') + ' ready');
+  updateEmpty(); renderPanel(); markDirty();
+};
+function updateEmpty(){ $('#empty').style.display = (songBuf || images.length) ? 'none' : 'flex'; }
+
+/* ============================================================ UI helpers */
+function el(tag, props, ...kids){
+  const e = document.createElement(tag);
+  if (props) for (const k in props) { if (k === 'class') e.className = props[k]; else if (k.startsWith('on')) e[k] = props[k];
+    else if (k === 'html') e.innerHTML = props[k]; else e.setAttribute(k, props[k]); }
+  for (const k of kids) if (k != null) e.append(k);
+  return e;
+}
+function slider(label, get, set, min, max, step, show, after){
+  const val = el('b', null, show(get()));
+  const inp = el('input', { type: 'range', min, max, step, value: get() });
+  inp.oninput = () => { set(parseFloat(inp.value)); val.textContent = show(get()); save(); markDirty(); if (after) after(); };
+  return el('div', { class: 'row' }, el('div', { class: 'lbl' }, el('span', null, label), val), inp);
+}
+const sS = (label, key, min, max, step, show, after) => slider(label, () => S[key], v => { S[key] = v; }, min, max, step, show, after);
+function chips(opts, cur, pick){
+  return el('div', { class: 'chips' }, ...opts.map(([v, l]) =>
+    el('button', { class: 'chip' + (v === cur ? ' on' : ''), onclick: () => pick(v) }, l)));
+}
+function toggle(label, key, after){
+  const b = el('button', { class: 'sw' + (S[key] ? ' on' : ''), 'aria-label': label });
+  b.onclick = () => { S[key] = !S[key]; b.classList.toggle('on', S[key]); save(); markDirty(); if (after) after(); };
+  return el('div', { class: 'toggle' }, el('span', null, label), b);
+}
+const pct = v => Math.round(v * 100) + '%';
+let textId = Date.now();
+function newText(o){ return Object.assign({ id: ++textId, text: 'Your text', font: 'clean', size: 5, color: '#ffffff',
+  pos: 'center', align: 'center', offset: 0, shadow: true, start: 0, end: 0 }, o); }
+
+/* ============================================================ panels */
+let current = 'song';
+const PANELS = {
+  song(){
+    const info = songBuf
+      ? el('div', { class: 'card info', html: '<b>' + escapeHtml(songName) + '</b><br>Original length ' + fmt(songBuf.duration) +
+          ' → lofi version <b>' + fmt(dur()) + '</b> (speed ' + S.speed.toFixed(2) + '×)' })
+      : el('div', { class: 'card note', html: 'No song yet. MP3, M4A, WAV and .mpeg files all work.' });
+    return [el('h3', null, '🎵 Song'),
+      el('button', { class: 'btn primary block', onclick: () => $('#fSong').click() }, songBuf ? 'Change song' : '+ Add song'),
+      info,
+      sS('Fade in', 'fadeIn', 0, 10, 0.5, v => v + 's', restartIfPlaying),
+      sS('Fade out', 'fadeOut', 0, 15, 0.5, v => v + 's', restartIfPlaying),
+      el('p', { class: 'note' }, 'No sound on iPhone? Turn off the silent switch. Uploading to YouTube? Use songs you made or royalty-free tracks — slowing a song down does not remove copyright.')];
+  },
+  bg(){
+    const opts = [['none', 'None'], ['file', bgBuf ? '🎵 ' + bgName.slice(0, 18) : 'My music file'], ['rain', '🌧️ Rain'], ['ocean', '🌊 Ocean'], ['night', '🌙 Night hum']];
+    return [el('h3', null, '🌧️ Background music'),
+      el('p', { class: 'note' }, 'Plays softly under your song and loops for the whole video. Rain, Ocean and Night hum are built in.'),
+      chips(opts, S.bgType, v => { if (v === 'file' && !bgBuf) { $('#fBg').click(); return; } S.bgType = v; save(); renderPanel(); restartIfPlaying(); }),
+      el('button', { class: 'btn ghost block', onclick: () => $('#fBg').click() }, bgBuf ? 'Change background music file' : '+ Add background music file'),
+      sS('Background volume', 'bgVol', 0, 1, 0.01, pct, applyLive)];
+  },
+  images(){
+    const grid = el('div', { class: 'thumbs' }, ...images.map((im, i) =>
+      el('div', { class: 'thumb' }, el('img', { src: im.url, alt: '' }), el('span', null, i + 1),
+        el('button', { onclick: () => { images.splice(i, 1); updateEmpty(); renderPanel(); markDirty(); }, 'aria-label': 'Remove' }, '✕'))));
+    return [el('h3', null, '🖼️ Images'),
+      el('button', { class: 'btn primary block', onclick: () => $('#fImg').click() }, '+ Add images'),
+      images.length ? grid : el('p', { class: 'note' }, 'Add one image or several. Several images slowly crossfade into each other.'),
+      sS('Slow zoom', 'zoom', 0, 1, 0.05, pct),
+      images.length > 1 ? sS('Seconds per image', 'secPerImg', 4, 60, 1, v => v + 's') : null,
+      images.length > 1 ? sS('Crossfade', 'xfade', 0.5, 5, 0.5, v => v + 's') : null];
+  },
+  text(){
+    const quick = el('div', { class: 'chips' },
+      el('button', { class: 'chip', onclick: () => addText({ text: songName || 'Song name', size: 7, pos: 'center' }) }, '+ Song title'),
+      el('button', { class: 'chip', onclick: () => addText({ text: 'Artist name', size: 4, pos: 'bottom', color: '#f6c177' }) }, '+ Artist'),
+      el('button', { class: 'chip', onclick: () => addText({ text: 'slowed + reverb', size: 3.5, pos: 'top', font: 'mono' }) }, '+ slowed + reverb'),
+      el('button', { class: 'chip', onclick: () => addText({ text: 'स्लोड + रिवर्ब', size: 4.5, pos: 'top', font: 'hindi' }) }, '+ हिंदी'));
+    const cards = S.texts.map((L, i) => textCard(L, i));
+    return [el('h3', null, '🅃 Text'),
+      el('button', { class: 'btn primary block', onclick: () => addText({}) }, '+ Add text'),
+      quick, ...cards,
+      !S.texts.length ? el('p', { class: 'note' }, 'Add a title, artist name or any line. Each text can show for the whole video or only part of it.') : null];
+  },
+  vibe(){
+    const pick = p => { const old = S.speed; Object.assign(S, PRESETS[p]); S.preset = p; save(); renderPanel(); applyLive();
+      if (old !== S.speed) restartIfPlaying(); markDirty(); };
+    const custom = () => { if (S.preset !== 'custom') { S.preset = 'custom'; renderChipsOnly(); } applyLive(); };
+    return [el('h3', null, '🎚️ Lofi vibe'),
+      chips([['off', 'Original'], ['light', 'Light'], ['medium', 'Medium'], ['heavy', 'Heavy'], ['slowrev', 'Slowed + Reverb'], ['custom', 'Custom']],
+        S.preset, p => { if (p !== 'custom') pick(p); }),
+      sS('Speed (slow)', 'speed', 0.7, 1.1, 0.01, v => v.toFixed(2) + '×', () => { custom(); restartIfPlaying(); }),
+      sS('Reverb (space)', 'reverb', 0, 1, 0.01, pct, custom),
+      sS('Warmth (muffled)', 'warmth', 2000, 20000, 100, v => v >= 19900 ? 'off' : Math.round(v / 100) / 10 + ' kHz', custom),
+      sS('Bass boost', 'bass', 0, 10, 0.5, v => '+' + v + ' dB', custom),
+      sS('Tape wobble', 'wobble', 0, 1, 0.01, pct, () => { custom(); restartIfPlaying(); }),
+      sS('Vinyl crackle', 'crackleVol', 0, 1, 0.01, pct, custom),
+      el('p', { class: 'note' }, 'Slower speed also lowers the pitch — that is the classic slowed lofi sound. Lower warmth = more muffled.')];
+  },
+  volume(){
+    return [el('h3', null, '🔊 Volume'),
+      sS('Song volume', 'songVol', 0, 1.5, 0.01, pct, applyLive),
+      sS('Background music', 'bgVol', 0, 1, 0.01, pct, applyLive),
+      sS('Vinyl crackle', 'crackleVol', 0, 1, 0.01, pct, applyLive),
+      sS('Master volume', 'master', 0, 1.5, 0.01, pct, applyLive)];
+  },
+  visuals(){
+    return [el('h3', null, '✨ Video effects'),
+      toggle('Falling rain', 'rain'), toggle('Film grain', 'grain'), toggle('Dark corners (vignette)', 'vignette'),
+      toggle('Music bars (visualizer)', 'viz'), toggle('Progress bar', 'progress'),
+      sS('Darken image', 'dark', 0, 0.6, 0.01, pct)];
+  },
+  format(){
+    return [el('h3', null, '📐 Format'),
+      el('div', { class: 'note' }, 'Shape'),
+      chips([['16:9', '▭ YouTube 16:9'], ['9:16', '▯ Shorts / Reels 9:16'], ['1:1', '◻ Square 1:1']], S.aspect, v => { S.aspect = v; save(); resize(); renderPanel(); }),
+      el('div', { class: 'note' }, 'Quality'),
+      chips([['720', '720p (faster, smaller)'], ['1080', '1080p (sharper)']], S.quality, v => { S.quality = v; save(); resize(); renderPanel(); }),
+      el('p', { class: 'note' }, '720p is safest on iPhone. Use 1080p for YouTube uploads if your phone handles it smoothly.')];
+  },
+};
+function escapeHtml(s){ return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function addText(o){ S.texts.push(newText(o)); save(); renderPanel(); markDirty();
+  setTimeout(() => { const p = $('#panel'); p.scrollTop = p.scrollHeight; }, 30); }
+function textCard(L, i){
+  const ch = () => { save(); markDirty(); };
+  const ta = el('textarea', { rows: 2 }); ta.value = L.text; ta.oninput = () => { L.text = ta.value; ch(); };
+  const color = el('input', { type: 'color', value: L.color }); color.oninput = () => { L.color = color.value; ch(); };
+  const sw = ['#ffffff', '#f6c177', '#c4a7e7', '#9ccfd8', '#eb6f92', '#1b1206'].map(c =>
+    el('button', { class: 'swatch', style: 'background:' + c, onclick: () => { L.color = c; color.value = c; ch(); }, 'aria-label': c }));
+  const num = (key, ph) => { const n = el('input', { type: 'number', min: 0, step: 1, inputmode: 'decimal', placeholder: ph });
+    n.value = L[key] || ''; n.oninput = () => { L[key] = parseFloat(n.value) || 0; ch(); }; return n; };
+  return el('div', { class: 'card' },
+    el('div', { class: 'cardhead' }, el('span', null, 'Text ' + (i + 1)),
+      el('button', { class: 'del', onclick: () => { S.texts.splice(i, 1); ch(); renderPanel(); } }, 'Delete')),
+    ta,
+    chips(Object.entries(FONTS).map(([k, f]) => [k, f.label]), L.font, v => { L.font = v; ch(); renderPanel(); }),
+    slider('Size', () => L.size, v => { L.size = v; }, 2, 16, 0.1, v => v.toFixed(1)),
+    el('div', { class: 'swatches' }, ...sw, color),
+    chips([['top', 'Top'], ['center', 'Middle'], ['bottom', 'Bottom']], L.pos, v => { L.pos = v; ch(); renderPanel(); }),
+    chips([['left', 'Left'], ['center', 'Center'], ['right', 'Right']], L.align, v => { L.align = v; ch(); renderPanel(); }),
+    slider('Move up / down', () => L.offset, v => { L.offset = v; }, -40, 40, 0.5, v => (v > 0 ? '+' : '') + v),
+    el('div', { class: 'toggle' }, el('span', null, 'Shadow'),
+      (() => { const b = el('button', { class: 'sw' + (L.shadow !== false ? ' on' : '') });
+        b.onclick = () => { L.shadow = L.shadow === false; b.classList.toggle('on', L.shadow); ch(); }; return b; })()),
+    el('div', { class: 'two', style: 'margin-top:10px' },
+      el('div', null, el('label', null, 'Show from (sec)'), num('start', '0')),
+      el('div', null, el('label', null, 'Until (sec, empty = end)'), num('end', 'end'))));
+}
+function renderPanel(){
+  const p = $('#panel'), top = p.scrollTop; p.innerHTML = '';
+  for (const n of PANELS[current]()) if (n) p.append(n);
+  p.scrollTop = top;
+  document.querySelectorAll('#tools button').forEach(b => b.classList.toggle('on', b.dataset.p === current));
+}
+function renderChipsOnly(){ const first = $('#panel .chips'); if (!first) return;
+  first.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c.textContent === 'Custom')); }
+document.querySelectorAll('#tools button').forEach(b => b.onclick = () => {
+  current = b.dataset.p; $('#panel').scrollTop = 0; renderPanel(); });
+
+/* ============================================================ export */
+let dlPromise = null;
+function getDownloads(){
+  if (!dlPromise) dlPromise = (window.claude && typeof window.claude.use === 'function')
+    ? Promise.resolve(window.claude.use('downloads')).catch(() => null) : Promise.resolve(null);
+  return dlPromise;
+}
+setTimeout(getDownloads, 0);
+const inClaude = () => !!(window.claude && typeof window.claude.use === 'function');
+function toFile(blob, name){
+  const type = (blob.type || '').split(';')[0] || (name.endsWith('.webm') ? 'video/webm' : 'video/mp4');
+  try { return new File([blob], name, { type }); } catch (e) { return null; }
+}
+const canShareFile = f => !!(f && navigator.canShare && navigator.share && navigator.canShare({ files: [f] }));
+/* Save to Photos / any app via the iPhone share sheet (must run straight from the tap) */
+function shareBlob(blob, name){
+  const f = toFile(blob, name);
+  if (!canShareFile(f)) { downloadBlob(blob, name); return; }
+  navigator.share({ files: [f], title: name }).then(() => toast('Done ✓'))
+    .catch(e => { if (e && e.name === 'AbortError') return; downloadBlob(blob, name); });
+}
+function downloadBlob(blob, name){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.append(a); a.click(); a.remove();
+  toast('Saved to Files → Downloads. If nothing happened, long-press the video and choose Save.', 5000);
+}
+async function saveBlob(blob, name){
+  if (!inClaude()) { downloadBlob(blob, name); return; }
+  const dl = await getDownloads();
+  if (dl) {
+    try { await dl.save({ filename: name, data: blob }); toast('Saved ✓'); }
+    catch (e) { if (e && e.code === 'declined') return;
+      if (e && e.code === 'rate_limited') toast('Please wait a moment and tap Save again');
+      else toast('Could not save here (' + ((e && e.code) || 'error') + '). Long-press the video to save it.', 5000); }
+    return;
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.append(a); a.click(); a.remove();
+  toast('If nothing downloaded, long-press the video and choose Save', 5000);
+}
+function pickMime(kind){
+  if (typeof MediaRecorder === 'undefined') return null;
+  const list = kind === 'video'
+    ? ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']
+    : ['audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'];
+  for (const m of list) { try { if (MediaRecorder.isTypeSupported(m)) return m; } catch (e) {} }
+  return '';
+}
+const sheet = $('#sheet'), modal = $('#modal');
+let expProgress = null, cancelExport = null, lastResult = null;
+function openExport(){
+  if (exporting) return; modal.classList.add('show'); pause();
+  const canVideo = typeof MediaRecorder !== 'undefined' && !!cv.captureStream;
+  sheet.innerHTML = '';
+  const listen = el('input', { type: 'checkbox' }); listen.checked = !!S.listen;
+  listen.onchange = () => { S.listen = listen.checked; save(); };
+  sheet.append(
+    el('h2', null, 'Export'),
+    el('p', { class: 'note', html: songBuf
+      ? 'Length <b>' + fmt(dur()) + '</b> · ' + S.aspect + ' · ' + S.quality + 'p.<br>Export runs in real time, so it takes about <b>' + fmt(dur()) +
+        '</b>. Keep this screen open and your phone unlocked until it finishes.'
+      : 'Add a song first (🎵 Song).' }),
+    el('button', { class: 'btn primary block', disabled: !songBuf || !canVideo ? '' : null, onclick: () => runExport('video') }, '🎬 Export video (.mp4)'),
+    el('button', { class: 'btn block', disabled: !songBuf || typeof MediaRecorder === 'undefined' ? '' : null, onclick: () => runExport('audio') }, '🎧 Export lofi audio only'),
+    el('label', { class: 'check' }, listen, 'Play sound while exporting'),
+    !canVideo ? el('p', { class: 'note' }, 'This browser cannot record video. Update to iOS 15 or newer and use Safari.') : null,
+    lastResult ? el('button', { class: 'btn ghost block', onclick: () => showResult(lastResult) }, 'Show last export') : null,
+    el('button', { class: 'btn ghost block', onclick: closeModal }, 'Close'));
+  [...sheet.querySelectorAll('button')].forEach(b => { if (b.getAttribute('disabled') === 'null') b.removeAttribute('disabled'); });
+}
+function closeModal(){ if (!exporting) modal.classList.remove('show'); }
+modal.onclick = e => { if (e.target === modal) closeModal(); };
+$('#exportBtn').onclick = openExport;
+
+async function runExport(kind){
+  if (!songBuf || exporting) return;
+  const ac = ensureAC(); const L = dur(); let cancelled = false, src = null, rec = null, wake = null, tracks = [];
+  exporting = true; expT = () => 0; expAn = null;
+  const label = el('div', { class: 'note' }, 'Preparing lofi audio…');
+  const bar = el('div', { class: 'bar' }, el('div'));
+  const timeTxt = el('div', { class: 'note' }, '');
+  sheet.innerHTML = '';
+  sheet.append(el('h2', null, kind === 'video' ? 'Making your video…' : 'Making your audio…'), label, bar, timeTxt,
+    el('p', { class: 'note' }, 'Keep this screen open. Locking the phone or switching apps will stop the export.'),
+    el('button', { class: 'btn ghost block', onclick: () => { cancelled = true; if (cancelExport) cancelExport(); } }, 'Cancel'));
+  const setBar = f => { bar.firstChild.style.width = Math.round(clamp(f, 0, 1) * 100) + '%'; };
+  try {
+    try { if (navigator.wakeLock) wake = await navigator.wakeLock.request('screen'); } catch (e) {}
+    // 1) render the lofi audio offline (fast)
+    const sr = ac.sampleRate, off = new OfflineAudioContext(2, Math.ceil(L * sr), sr);
+    buildGraph(off, off.destination, 0, 0);
+    const rendered = await off.startRendering();
+    if (cancelled) throw 'cancel';
+    // 2) record in real time
+    const md = ac.createMediaStreamDestination(), an = ac.createAnalyser();
+    an.fftSize = 256; an.smoothingTimeConstant = 0.75;
+    src = ac.createBufferSource(); src.buffer = rendered; src.connect(an); an.connect(md);
+    if (S.listen) an.connect(ac.destination);
+    tracks = [...md.stream.getAudioTracks()];
+    if (kind === 'video') { const vs = cv.captureStream(30); tracks = [...vs.getVideoTracks(), ...tracks]; }
+    const stream = new MediaStream(tracks), mime = pickMime(kind);
+    const opts = { audioBitsPerSecond: 192000 };
+    if (mime) opts.mimeType = mime;
+    if (kind === 'video') opts.videoBitsPerSecond = S.quality === '1080' ? 8000000 : 5000000;
+    rec = new MediaRecorder(stream, opts);
+    const chunks = []; rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+    const stopped = new Promise(r => { rec.onstop = r; });
+    const ended = new Promise(r => { src.onended = r; });
+    cancelExport = () => { try { src.stop(); } catch (e) {} };
+    rec.start(1000);
+    const start = ac.currentTime + 0.25;
+    expAn = an; expT = () => clamp(ac.currentTime - start, 0, L);
+    label.textContent = kind === 'video' ? 'Recording video…' : 'Recording audio…';
+    expProgress = t => { setBar(t / L); timeTxt.textContent = fmt(t) + ' / ' + fmt(L); };
+    src.start(start);
+    await ended;
+    await new Promise(r => setTimeout(r, 400));
+    rec.stop(); await stopped;
+    if (cancelled) throw 'cancel';
+    const type = rec.mimeType || mime || (kind === 'video' ? 'video/mp4' : 'audio/mp4');
+    const ext = type.includes('mp4') ? 'mp4' : 'webm';
+    const blob = new Blob(chunks, { type });
+    const name = safeFile(songName) + (kind === 'video' ? ' lofi video.' : ' lofi audio.') + ext;
+    lastResult = { blob, name, kind, url: URL.createObjectURL(blob) };
+    exporting = false; showResult(lastResult);
+  } catch (e) {
+    exporting = false;
+    if (e === 'cancel') { toast('Export cancelled'); openExport(); }
+    else { console.error(e); sheet.innerHTML = '';
+      sheet.append(el('h2', null, 'Export failed'), el('p', { class: 'note' }, String(e && e.message || e)),
+        el('p', { class: 'note' }, 'Try 720p, close other apps, and keep the screen on.'),
+        el('button', { class: 'btn block', onclick: openExport }, 'Back')); }
+  } finally {
+    exporting = false; expProgress = null; cancelExport = null; expAn = null;
+    tracks.forEach(t => { try { t.stop(); } catch (e) {} });
+    try { if (wake) wake.release(); } catch (e) {}
+    markDirty();
+  }
+}
+function showResult(r){
+  modal.classList.add('show'); sheet.innerHTML = '';
+  const media = r.kind === 'video' ? el('video', { src: r.url, controls: '', playsinline: '' }) : el('audio', { src: r.url, controls: '' });
+  sheet.append(el('h2', null, 'Done ✓'),
+    el('p', { class: 'note' }, r.name + ' · ' + (r.blob.size / 1048576).toFixed(1) + ' MB'),
+    media);
+  const shareable = !inClaude() && canShareFile(toFile(r.blob, r.name));
+  if (shareable) sheet.append(
+    el('button', { class: 'btn primary block', onclick: () => shareBlob(r.blob, r.name) },
+      r.kind === 'video' ? '📲 Save to Photos / Share' : '📲 Save / Share'),
+    el('p', { class: 'note', style: 'text-align:center;margin:0 0 4px' },
+      r.kind === 'video' ? 'In the share menu tap “Save Video” to put it in Photos.' : 'Tap “Save to Files” in the share menu.'),
+    el('button', { class: 'btn block', onclick: () => downloadBlob(r.blob, r.name) }, '⬇ Save to Files'));
+  else sheet.append(
+    el('button', { class: 'btn primary block', onclick: () => saveBlob(r.blob, r.name) }, '⬇ Save to phone'));
+  sheet.append(
+    el('button', { class: 'btn block', onclick: openExport }, 'Export again'),
+    el('button', { class: 'btn ghost block', onclick: closeModal }, 'Close'));
+}
+
+/* ============================================================ start */
+resize(); renderPanel(); updateEmpty(); updatePlay(); requestAnimationFrame(frame);
+</script>
+</body>
+</html>
